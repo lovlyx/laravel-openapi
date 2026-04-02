@@ -1,0 +1,25 @@
+src/Console/SchemaFactoryMakeCommand.php
+  0d7f21bf73f66cba 43,45,47,53-73,86
+composer.json
+  0d7f21bf73f66cba 24,26,30-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "cbfcf6938b0daa55bcaaca76b4b44abfff5384c9",
+  "prompts": {
+    "0d7f21bf73f66cba": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a35b49b2-8eed-4010-8f44-033c6c47f2be",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Lovly",
+      "messages": [],
+      "total_additions": 30,
+      "total_deletions": 44,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    }
+  }
+}
