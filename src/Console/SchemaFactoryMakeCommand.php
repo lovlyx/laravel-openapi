@@ -2,12 +2,6 @@
 
 namespace Vyuldashev\LaravelOpenApi\Console;
 
-use Doctrine\DBAL\Schema\Column;
-use Doctrine\DBAL\Types\BooleanType;
-use Doctrine\DBAL\Types\DateTimeType;
-use Doctrine\DBAL\Types\DateType;
-use Doctrine\DBAL\Types\DecimalType;
-use Doctrine\DBAL\Types\IntegerType;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
@@ -46,45 +40,37 @@ class SchemaFactoryMakeCommand extends GeneratorCommand
         /** @var Model $model */
         $model = app($model);
 
-        $columns = SchemaFacade::connection($model->getConnectionName())->getColumnListing(config('database.connections.'.config('database.default').'.prefix', '').$model->getTable());
+        $table = $model->getTable();
         $connection = $model->getConnection();
+        $schemaManager = SchemaFacade::connection($model->getConnectionName());
+
+        $columns = $schemaManager->getColumns($table);
 
         $definition = 'return Schema::object(\''.class_basename($model).'\')'.PHP_EOL;
         $definition .= '            ->properties('.PHP_EOL;
 
         $properties = collect($columns)
-            ->map(static function ($column) use ($model, $connection) {
-                /** @var Column $column */
-                $column = $connection->getDoctrineColumn(config('database.connections.'.config('database.default').'.prefix', '').$model->getTable(), $column);
-                $name = $column->getName();
-                $default = $column->getDefault();
-                $notNull = $column->getNotnull();
+            ->map(static function (array $column) {
+                $name = $column['name'];
+                $default = $column['default'];
+                $nullable = $column['nullable'];
+                $typeName = $column['type_name'];
 
-                switch (get_class($column->getType())) {
-                    case IntegerType::class:
-                        $format = 'Schema::integer(%s)->default(%s)';
-                        $args = [$name, $notNull ? (int) $default : null];
-                        break;
-                    case BooleanType::class:
-                        $format = 'Schema::boolean(%s)->default(%s)';
-                        $args = [$name, $notNull ? $default : null];
-                        break;
-                    case DateType::class:
-                        $format = 'Schema::string(%s)->format(Schema::FORMAT_DATE)->default(%s)';
-                        $args = [$name, $notNull ? $default : null];
-                        break;
-                    case DateTimeType::class:
-                        $format = 'Schema::string(%s)->format(Schema::FORMAT_DATE_TIME)->default(%s)';
-                        $args = [$name, $notNull ? $default : null];
-                        break;
-                    case DecimalType::class:
-                        $format = 'Schema::number(%s)->format(Schema::FORMAT_FLOAT)->default(%s)';
-                        $args = [$name, $notNull ? (float) $default : null];
-                        break;
-                    default:
-                        $format = 'Schema::string(%s)->default(%s)';
-                        $args = [$name, $default];
-                        break;
+                $format = match ($typeName) {
+                    'int', 'integer', 'bigint', 'smallint', 'tinyint', 'mediumint' => 'Schema::integer(%s)->default(%s)',
+                    'boolean', 'bool' => 'Schema::boolean(%s)->default(%s)',
+                    'date' => 'Schema::string(%s)->format(Schema::FORMAT_DATE)->default(%s)',
+                    'datetime', 'timestamp' => 'Schema::string(%s)->format(Schema::FORMAT_DATE_TIME)->default(%s)',
+                    'decimal', 'float', 'double' => 'Schema::number(%s)->format(Schema::FORMAT_FLOAT)->default(%s)',
+                    default => 'Schema::string(%s)->default(%s)',
+                };
+
+                $defaultValue = $nullable ? null : $default;
+
+                if (in_array($typeName, ['int', 'integer', 'bigint', 'smallint', 'tinyint', 'mediumint'])) {
+                    $defaultValue = $nullable ? null : (int) $default;
+                } elseif (in_array($typeName, ['decimal', 'float', 'double'])) {
+                    $defaultValue = $nullable ? null : (float) $default;
                 }
 
                 $args = array_map(static function ($value) {
@@ -97,7 +83,7 @@ class SchemaFactoryMakeCommand extends GeneratorCommand
                     }
 
                     return '\''.$value.'\'';
-                }, $args);
+                }, [$name, $defaultValue]);
 
                 $indentation = str_repeat('    ', 4);
 
