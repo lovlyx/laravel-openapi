@@ -1,0 +1,23 @@
+composer.json
+  0d7f21bf73f66cba 25,54-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "6cf5766082a66a0a3ca551f8752352695cdeda43",
+  "prompts": {
+    "0d7f21bf73f66cba": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a35b49b2-8eed-4010-8f44-033c6c47f2be",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Lovly",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 1,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    }
+  }
+}
